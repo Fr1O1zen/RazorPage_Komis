@@ -1,0 +1,284 @@
+﻿@page
+@model WebApplication1.Pages.CarsModel
+@using MySqlConnector
+@{
+    string connectionString = "server=127.0.0.1;user=root;database=chcar;port=3306;password=root;";
+
+    // Zapytanie SQL
+    string query = "SELECT Marka, Model, Przebieg, Moc, Pojemnosc, Paliwo, DataProd, Cena, Opis FROM cart;";
+
+    // Wykonanie zapytania i odczytanie wyników
+    List<string[]> results = new List<string[]>();
+    using (MySqlConnection connection = new MySqlConnection(connectionString))
+    {
+        connection.Open();
+        using (MySqlCommand command = new MySqlCommand(query, connection))
+        {
+            using (MySqlDataReader reader = command.ExecuteReader())
+            {
+                int index = 0;
+                while (reader.Read())
+                {
+                    
+                    string[] row = new string[10];
+                    row[0] = reader.GetString(0); //Marka
+                    row[1] = reader.GetString(1); //Model
+                    row[2] = reader.GetFloat(2).ToString(); //Przebieg
+                    row[3] = reader.GetInt32(3).ToString(); //Moc
+                    row[4] = reader.GetFloat(4).ToString(); //Pojemnosc
+                    row[5] = reader.GetString(5); //Paliwo
+                    row[6] = reader.GetInt32(6).ToString(); //Data
+                    row[7] = reader.GetFloat(7).ToString(); //Cena
+                    row[8] = reader.GetString(8); //Opis
+                    row[9] = index.ToString();//ID
+                    results.Add(row);
+                    index++;
+                }
+            }
+        }
+    }
+}
+
+<!DOCTYPE html>
+<html>
+    <head>
+ 
+        <style>
+               
+        @@-webkit-keyframes fadeOut {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+
+        #loader {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: fadeOut 2s ease-in-out forwards;
+
+        }
+
+        #loader-text {
+          font-size: 24px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .car-details {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+            text-align: left;
+        }
+
+            /* Style for the car details section headings */
+            .car-details p {
+                margin: 0;
+                font-weight: bold;
+                font-size: 18px;
+                color: #333;
+                margin-bottom: 5px;
+            }
+
+            /* Style for the car details section values */
+            .car-details span {
+                font-weight: normal;
+                font-size: 16px;
+                color: #777;
+            }
+
+        footer {
+          background-color: black;
+          color: #fff;
+          padding: 20px;
+        }
+
+        footer a {
+          color: #fff;
+        }
+
+        footer a:hover {
+          color: #bbb;
+        }
+
+
+        textarea {
+          width: 100%;
+          height: 150px;
+          padding: 10px;
+          font-size: 16px;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          resize: none;
+        }
+        </style>
+    </head>
+<body>
+     @*START tzw.PAGE LOADER*@
+    <div id="loader">
+        <img src="https://cdn-icons-png.flaticon.com/512/2554/2554936.png" width="90px" />
+    </div>
+    @*KONIEC tzw.PAGE LOADER*@
+
+
+    @*START Navbar strony*@
+        <nav class="navbar navbar-dark navbar-expand-lg bg-primary">
+            <a class="navbar-brand" href="Index"><h2>Komis samochodowy</h2></a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="Index"><h4>Strona główna</h4></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="#"><h4>Samochody na sprzedaż</h4></a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    @*KONIEC Navbar strony*@
+    <h1 class="text-center">Poniżej znajdują się aktualnie dostępne pojazdy w komisie</h1>
+    <table id="carTable" style="opacity: 0; transition: opacity 1s, transform 1s;">
+        <thead>
+            <tr>
+                <th class="text-center">Marka</th>
+                <th class="text-center">Model</th>
+                <th class="text-center">Moc</th>
+                <th class="text-center">Info</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (string[] row in results)
+            {
+                <tr>
+                    <td class="text-center">@row[0]</td>
+                    <td class="text-center">@row[1]</td>
+                    <td class="text-center">@row[3] KM</td>
+                    <td class="text-center">
+                        <button class="btn btn-warning" onclick="showCarDetails('@row[9]')">sprawdź !</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <script>
+        var carTable = document.getElementById('carTable');
+        var tablePosition = carTable.getBoundingClientRect().top;
+        var windowHeight = window.innerHeight;
+
+        if (tablePosition < windowHeight) {
+            carTable.style.opacity = 1;
+            carTable.style.transform = 'translateX(0)';
+        }
+
+        document.addEventListener('scroll', function () {
+            var tablePosition = carTable.getBoundingClientRect().top;
+
+            if (tablePosition < windowHeight) {
+                carTable.style.opacity = 1;
+                carTable.style.transform = 'translateX(0)';
+            }
+        });
+    </script>
+    <div id="carDetails" class="car-details bg-dark" style="display:none;">
+        <p class="text-light">Marka: <span class="marka text-info"></span></p>
+        <p class="text-light">Model: <span class="model text-info"></span></p>
+        <p class="text-light">Pojemność: <span class="pojemnosc text-info"></span></p>
+        <p class="text-light">Cena: <span class="cena text-info"></span> pln</p>
+        <p class="text-light">Przebieg: <span class="przebieg text-info"></span></p>
+        <p class="text-light">Moc: <span class="moc text-info"></span></p>
+        <p class="text-light">Paliwo: <span class="paliwo text-info"></span></p>
+        <p class="text-light">Data: <span class="data text-info"></span></p>
+        <p class="text-light">Opis:</p>
+        <textarea class="opis" readonly></textarea>
+    </div>
+
+    @*START stopka strony*@
+    <footer class=" py-3">
+        <div>
+            <div class="row">
+                <div class="col-md-4" id="kontakt">
+                    <h5>Informacje kontaktowe</h5>
+                    <p>Adres: ul. Prószkowska 76, 00-000 Opole</p>
+                    <p>Telefon: 123-456-789</p>
+                    <p>Email: kontakt@komis-samochodowy.pl</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Godziny otwarcia</h5>
+                    <p>Poniedziałek - Piątek: 9:00 - 17:00</p>
+                    <p>Sobota: 9:00 - 14:00</p>
+                    <p>Niedziela: nieczynne</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Mapa dojazdu</h5>
+                    <iframe class="hidden-xs" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2529.5880194742977!2d17.90083391275952!3d50.653341971513335!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x471053200b59175d%3A0x11a633b16d014c52!2sPr%C3%B3szkowska%2076%2C%2046-020%20Opole!5e0!3m2!1spl!2spl!4v1683824796695!5m2!1spl!2spl" class="mapka" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                </div>
+            </div>
+            <hr>
+            <p class="text-center">© 2023 Komis Samochodowy. Sidorowicz Marcin s103148</p>
+        </div>
+    </footer>
+    @*KONIEC stopka strony*@
+
+    <script>
+        var results = @Html.Raw(Json.Serialize(results));
+        
+        function showCarDetails(id) {
+            var car = results.find(function (row) {
+                return row[9] === id;
+            });
+
+            var details = document.getElementById("carDetails");
+            details.querySelector(".marka").textContent = car[0];
+            details.querySelector(".model").textContent = car[1];
+            details.querySelector(".przebieg").textContent = car[2];
+            details.querySelector(".moc").textContent = car[3];
+            details.querySelector(".pojemnosc").textContent = car[4];
+            details.querySelector(".paliwo").textContent = car[5];
+            details.querySelector(".data").textContent = car[6];
+            details.querySelector(".cena").textContent = car[7];
+            details.querySelector(".opis").textContent = car[8];
+            details.style.display = "block";
+           
+        }
+    </script>
+     <script>
+    window.onload = (event) => {
+      var loader = document.getElementById('loader');
+      var content = document.getElementById('content');
+
+      // Ukryj loader i pokaż zawartość strony
+      loader.style.display = 'none';
+    };
+  </script>
+    
+   
+<script>
+       
+</script>
+</body>
+</html>
